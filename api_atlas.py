@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from user_preference_manager import UserFoodPreferenceManager
 import json
 import os
@@ -546,6 +546,113 @@ def delete_user(user_id):
             "success": False,
             "error": str(e)
         }), 500
+
+@app.route('/api/dining-halls', methods=['GET'])
+def get_dining_halls():
+    """Get list of all dining halls."""
+    try:
+        import food_matching_service
+        halls = food_matching_service.get_all_dining_halls()
+        return jsonify({"success": True, "dining_halls": halls, "count": len(halls)}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/dining-halls/<hall_name>/menu', methods=['GET'])
+def get_dining_hall_menu(hall_name):
+    """Get menu items for a specific dining hall and meal period."""
+    try:
+        from dining_hall_manager import DiningHallManager
+        meal_period = request.args.get('meal_period', default='lunch', type=str)
+        manager = DiningHallManager(mongodb_uri=os.getenv("MONGODB_URI"), db_name="food_preferences")
+        items = manager.get_items_by_hall_and_period(hall_name, meal_period)
+        manager.close()
+        return jsonify({"success": True, "items": items, "count": len(items), "dining_hall": hall_name, "meal_period": meal_period}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/user/<user_id>/matched-items', methods=['GET'])
+def get_user_matched_items(user_id):
+    """Get dining hall items matched to user preferences."""
+    try:
+        import food_matching_service
+        dining_hall = request.args.get('dining_hall', default='North Campus Dining', type=str)
+        meal_period = request.args.get('meal_period', default='lunch', type=str)
+        limit = request.args.get('limit', default=10, type=int)
+        matched_items = food_matching_service.get_matched_items(user_id, dining_hall=dining_hall, meal_period=meal_period, limit=limit)
+        return jsonify({"success": True, "matched_items": matched_items, "count": len(matched_items), "dining_hall": dining_hall, "meal_period": meal_period}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/admin/waste-insights', methods=['GET'])
+def get_admin_waste_insights():
+    """
+    Get aggregated waste insights across all users for admin dashboard.
+    Shows most disliked foods to help reduce waste.
+    
+    Query params:
+    - limit: Number of top items to return (default: 20)
+    
+    Returns:
+    {
+        "success": true,
+        "summary": {
+            "total_users_analyzed": 50,
+            "users_with_preferences": 45,
+            "total_unique_disliked_items": 25,
+            "average_dislikes_per_user": 3.2
+        },
+        "top_disliked_items": [
+            {
+                "food_item": "Broccoli",
+                "dislike_count": 30,
+                "percentage_of_users": 60.0,
+                "severity": "critical",
+                "recommendation": "Consider removing or reformulating broccoli"
+            }
+        ],
+        "recommendations": {...}
+    }
+    """
+    try:
+        import admin_analytics_service
+        
+        limit = request.args.get('limit', default=20, type=int)
+        insights = admin_analytics_service.get_admin_waste_insights(limit=limit)
+        
+        return jsonify({
+            "success": True,
+            **insights
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/api/admin/waste-by-category', methods=['GET'])
+def get_waste_by_category():
+    """Get waste insights grouped by food category."""
+    try:
+        import admin_analytics_service
+        
+        trends = admin_analytics_service.get_waste_trends_by_category()
+        
+        return jsonify({
+            "success": True,
+            **trends
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/admin/dashboard', methods=['GET'])
+def admin_dashboard():
+    """Serve the admin analytics dashboard."""
+    return render_template('admin_dashboard.html')
 
 @app.route('/api/health', methods=['GET'])
 def health_check():

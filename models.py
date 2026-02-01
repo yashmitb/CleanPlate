@@ -104,3 +104,37 @@ class DislikesResponse(BaseModel):
     success: bool
     dislikes: List[DislikedFood]
     count: int
+
+# --- Dining Hall Models ---
+
+class NutritionInfo(BaseModel):
+    calories: int
+    protein: int
+    carbs: int
+    fat: int
+
+class DiningHallItem(BaseModel):
+    item_id: str
+    name: str
+    dining_hall: str
+    category: str
+    ingredients: List[str]
+    tags: List[str] = []
+    allergens: List[str] = []
+    nutrition: NutritionInfo
+    available_days: List[str]
+    meal_period: str  # "breakfast", "lunch", "dinner"
+
+class MatchedItem(BaseModel):
+    item: DiningHallItem
+    match_score: float = Field(ge=0, le=100)
+    match_reasons: List[str]
+    confidence: str  # "high", "medium", "low"
+
+class MatchedItemsResponse(BaseModel):
+    success: bool
+    matched_items: List[MatchedItem]
+    count: int
+    dining_hall: str
+    meal_period: str
+

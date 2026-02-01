@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanPlate Admin Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1.1em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h3 {
+            color: #718096;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            color: #2d3748;
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            color: #a0aec0;
+            font-size: 0.9em;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .chart-container h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .insight-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .insight-card h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .dislike-item {
+            background: #f7fafc;
+            border-left: 4px solid #e53e3e;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .dislike-item:hover {
+            background: #edf2f7;
+            transform: translateX(5px);
+        }
+
+        .dislike-item.critical {
+            border-left-color: #e53e3e;
+        }
+
+        .dislike-item.high {
+            border-left-color: #ed8936;
+        }
+
+        .dislike-item.medium {
+            border-left-color: #ecc94b;
+        }
+
+        .dislike-item.low {
+            border-left-color: #48bb78;
+        }
+
+        .dislike-item h4 {
+            color: #2d3748;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .dislike-item .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 8px;
+        }
+
+        .dislike-item .stat {
+            color: #718096;
+            font-size: 0.9em;
+        }
+
+        .dislike-item .stat strong {
+            color: #2d3748;
+        }
+
+        .dislike-item .recommendation {
+            color: #4a5568;
+            font-size: 0.9em;
+            font-style: italic;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .severity-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .severity-badge.critical {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .severity-badge.high {
+            background: #feebc8;
+            color: #c05621;
+        }
+
+        .severity-badge.medium {
+            background: #fefcbf;
+            color: #975a16;
+        }
+
+        .severity-badge.low {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .action-items {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .action-items h2 {
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .action-items ul {
+            list-style: none;
+        }
+
+        .action-items li {
+            padding: 12px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .action-items li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            background: rgba(255,255,255,0.2);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: white;
+            font-size: 1.5em;
+        }
+
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .refresh-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .timestamp {
+            color: #a0aec0;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍽️ CleanPlate Admin Analytics</h1>
+            <p>Waste Reduction Insights & Recommendations</p>
+            <button class="refresh-btn" onclick="loadData()">🔄 Refresh Data</button>
+            <div class="timestamp" id="timestamp"></div>
+        </div>
+
+        <div id="loading" class="loading">Loading analytics data...</div>
+
+        <div id="content" style="display: none;">
+            <!-- Summary Stats -->
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <!-- Charts -->
+            <div class="insights-grid">
+                <div class="chart-container">
+                    <h2>📊 Top 10 Disliked Items</h2>
+                    <canvas id="dislikesChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h2>📈 Waste by Category</h2>
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Detailed Insights -->
+            <div class="insights-grid">
+                <div class="insight-card">
+                    <h2>🚨 Critical Items to Address</h2>
+                    <div id="criticalItems"></div>
+                </div>
+
+                <div class="action-items">
+                    <h2>📋 Recommended Actions</h2>
+                    <ul id="actionItems"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let dislikesChart = null;
+        let categoryChart = null;
+
+        async function loadData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('content').style.display = 'none';
+
+            try {
+                // Fetch waste insights
+                const insightsResponse = await fetch('/api/admin/waste-insights?limit=20');
+                const insights = await insightsResponse.json();
+
+                // Fetch category breakdown
+                const categoryResponse = await fetch('/api/admin/waste-by-category');
+                const categoryData = await categoryResponse.json();
+
+                // Update timestamp
+                document.getElementById('timestamp').textContent = 
+                    `Last updated: ${new Date().toLocaleString()}`;
+
+                // Render summary stats
+                renderStats(insights.summary);
+
+                // Render charts
+                renderDislikesChart(insights.top_disliked_items);
+                renderCategoryChart(categoryData.category_breakdown);
+
+                // Render critical items
+                renderCriticalItems(insights.top_disliked_items);
+
+                // Render action items
+                renderActionItems(insights.recommendations.action_items);
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+            } catch (error) {
+                document.getElementById('loading').innerHTML = 
+                    `<p style="color: #e53e3e;">Error loading data: ${error.message}</p>`;
+            }
+        }
+
+        function renderStats(summary) {
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <h3>Total Users</h3>
+                    <div class="value">${summary.total_users_analyzed || 0}</div>
+                    <div class="label">Analyzed</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Active Preferences</h3>
+                    <div class="value">${summary.users_with_preferences || 0}</div>
+                    <div class="label">Users with data</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Unique Dislikes</h3>
+                    <div class="value">${summary.total_unique_disliked_items || 0}</div>
+                    <div class="label">Different items</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Avg Dislikes</h3>
+                    <div class="value">${summary.average_dislikes_per_user || 0}</div>
+                    <div class="label">Per user</div>
+                </div>
+            `;
+        }
+
+        function renderDislikesChart(items) {
+            const ctx = document.getElementById('dislikesChart').getContext('2d');
+            
+            if (dislikesChart) {
+                dislikesChart.destroy();
+            }
+
+            const top10 = items.slice(0, 10);
+            
+            dislikesChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: top10.map(item => item.food_item),
+                    datasets: [{
+                        label: 'Number of Students',
+                        data: top10.map(item => item.dislike_count),
+                        backgroundColor: top10.map(item => {
+                            if (item.severity === 'critical') return '#fc8181';
+                            if (item.severity === 'high') return '#f6ad55';
+                            if (item.severity === 'medium') return '#f6e05e';
+                            return '#68d391';
+                        }),
+                        borderRadius: 8,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function renderCategoryChart(categories) {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            
+            if (categoryChart) {
+                categoryChart.destroy();
+            }
+
+            if (!categories || categories.length === 0) {
+                return;
+            }
+
+            categoryChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: categories.map(cat => cat.category.toUpperCase()),
+                    datasets: [{
+                        data: categories.map(cat => cat.total_dislikes),
+                        backgroundColor: [
+                            '#667eea', '#764ba2', '#f093fb', '#4facfe',
+                            '#43e97b', '#fa709a', '#fee140', '#30cfd0'
+                        ],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderCriticalItems(items) {
+            const container = document.getElementById('criticalItems');
+            const topItems = items.slice(0, 10);
+            
+            container.innerHTML = topItems.map(item => `
+                <div class="dislike-item ${item.severity}">
+                    <h4>${item.food_item} <span class="severity-badge ${item.severity}">${item.severity}</span></h4>
+                    <div class="stats">
+                        <div class="stat"><strong>${item.dislike_count}</strong> students</div>
+                        <div class="stat"><strong>${item.percentage_of_users}%</strong> of users</div>
+                    </div>
+                    <div class="recommendation">💡 ${item.recommendation}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderActionItems(actions) {
+            const container = document.getElementById('actionItems');
+            container.innerHTML = actions.map(action => 
+                `<li>${action}</li>`
+            ).join('');
+        }
+
+        // Load data on page load
+        loadData();
+
+        // Auto-refresh every 5 minutes
+        setInterval(loadData, 300000);
+    </script>
+</body>
+</html>
