@@ -1,7 +1,8 @@
 import certifi
 from pymongo import MongoClient
-
-uri = "mongodb+srv://cleanplate:cleanplatepassword@cluster0.txg2gfi.mongodb.net/?appName=Cluster0"
+from dotenv import load_dotenv
+load_dotenv()
+uri = os.getenv("MONGODB_URI")
 
 # Tell PyMongo to use certifi's certificate bundle
 client = MongoClient(uri, tlsCAFile=certifi.where())
