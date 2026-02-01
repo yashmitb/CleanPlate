@@ -11,6 +11,101 @@ load_dotenv()
 
 app = Flask(__name__)
 
+# --- Documentation ---
+@app.route('/')
+@app.route('/docs')
+def documentation():
+    """
+    Serve API documentation page.
+    """
+    return """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CleanPlate API Documentation</title>
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 20px; color: #333; }
+            h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+            h2 { color: #34495e; margin-top: 30px; }
+            .endpoint { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 5px solid #3498db; }
+            .method { font-weight: bold; color: #fff; padding: 3px 8px; border-radius: 3px; font-size: 0.9em; display: inline-block; min-width: 60px; text-align: center; }
+            .get { background: #61affe; }
+            .post { background: #49cc90; }
+            .delete { background: #f93e3e; }
+            .url { font-family: monospace; font-weight: bold; font-size: 1.1em; color: #333; margin-left: 10px; }
+            pre { background: #2d3436; color: #f1f1f1; padding: 15px; border-radius: 5px; overflow-x: auto; }
+            .desc { margin: 10px 0; font-size: 0.95em; }
+        </style>
+    </head>
+    <body>
+        <h1>🍽️ CleanPlate API Documentation</h1>
+        <p>Welcome to the CleanPlate API. Below is a list of available endpoints.</p>
+
+        <h2>Analysis</h2>
+        
+        <div class="endpoint">
+            <span class="method post">POST</span> <span class="url">/api/analyze/image</span>
+            <div class="desc">Analyze uploaded food image for waste data. expects <code>multipart/form-data</code> with <code>file</code> field.</div>
+        </div>
+
+        <div class="endpoint">
+            <span class="method post">POST</span> <span class="url">/api/analyze/url</span>
+            <div class="desc">Analyze food image from a URL. Expects JSON body.</div>
+            <pre>{ "image_url": "https://example.com/food.jpg" }</pre>
+        </div>
+
+        <h2>User Management</h2>
+
+        <div class="endpoint">
+            <span class="method post">POST</span> <span class="url">/api/user/create</span>
+            <div class="desc">Create a new user.</div>
+            <pre>{ "user_id": "u123", "user_name": "Alice" }</pre>
+        </div>
+
+        <div class="endpoint">
+            <span class="method get">GET</span> <span class="url">/api/user/&lt;user_id&gt;</span>
+            <div class="desc">Get basic user profile information.</div>
+        </div>
+
+        <div class="endpoint">
+            <span class="method delete">DELETE</span> <span class="url">/api/user/&lt;user_id&gt;</span>
+            <div class="desc">Delete a user and their history.</div>
+        </div>
+
+        <h2>Preferences & History</h2>
+
+        <div class="endpoint">
+            <span class="method post">POST</span> <span class="url">/api/user/preferences/update</span>
+            <div class="desc">Update user preferences with new analysis data.</div>
+            <pre>{
+  "user_id": "u123",
+  "waste_analysis": { ... }
+}</pre>
+        </div>
+
+        <div class="endpoint">
+            <span class="method get">GET</span> <span class="url">/api/user/&lt;user_id&gt;/summary</span>
+            <div class="desc">Get comprehensive user summary and stats.</div>
+        </div>
+
+        <div class="endpoint">
+            <span class="method get">GET</span> <span class="url">/api/user/&lt;user_id&gt;/history</span>
+            <div class="desc">Get meal analysis history. Optional param: <code>?limit=10</code></div>
+        </div>
+
+        <h2>System</h2>
+
+        <div class="endpoint">
+            <span class="method get">GET</span> <span class="url">/health</span>
+            <div class="desc">Check API health status.</div>
+        </div>
+
+    </body>
+    </html>
+    """
+
 # --- Analysis Endpoints ---
 
 @app.route('/api/analyze/image', methods=['POST'])
