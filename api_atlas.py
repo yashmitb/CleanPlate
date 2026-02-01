@@ -5,6 +5,7 @@ import os
 import socket
 from dotenv import load_dotenv
 import services
+# from pyngrok import ngrok
 
 # Load environment variables from .env file
 load_dotenv()
@@ -702,5 +703,11 @@ if __name__ == '__main__':
     
     if port != 5000:
         print(f"⚠️  Port 5000 is in use, using port {port} instead")
+    
+    print(f"\n🌐 Server running on:")
+    print(f"   Local:   http://localhost:{port}")
+    print(f"\n📱 To make this accessible anywhere:")
+    print(f"   1. Open a new terminal")
+    print(f"   2. Run this: ssh -R 80:localhost:port_number serveo.net")
     
     app.run(debug=True, host='0.0.0.0', port=port)
