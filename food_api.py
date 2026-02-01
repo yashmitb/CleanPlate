@@ -2,9 +2,11 @@ import openai
 import base64
 import json
 from pathlib import Path
-
+import dotenv.load_dotenv
+import os
+load_dotenv()
 # Set your OpenAI API key
-openai.api_key = "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"
+openai.api_key = os.getenv("OPENAI_KEY")
 
 def encode_image(image_path):
     """Encode image to base64 string"""
