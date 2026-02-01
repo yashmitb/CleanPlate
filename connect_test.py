@@ -3,6 +3,7 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 load_dotenv()
+import os
 uri = os.getenv("MONGODB_URI")
 
 # Tell PyMongo to use certifi's certificate bundle
