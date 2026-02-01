@@ -54,7 +54,15 @@ Return ONLY the JSON object, no other text or markdown."""
 def _parse_json_response(response_text: str) -> Dict[str, Any]:
     """Helper to safely parse JSON response from OpenAI."""
     try:
+        # Log the raw response for debugging
+        print(f"[DEBUG] Raw OpenAI response: {response_text[:200]}...")
+        
+        if not response_text or not response_text.strip():
+            raise ValueError("OpenAI returned an empty response")
+        
         response_text = response_text.strip()
+        
+        # Remove markdown code blocks if present
         if response_text.startswith("```json"):
             response_text = response_text[7:]
         if response_text.startswith("```"):
@@ -63,13 +71,23 @@ def _parse_json_response(response_text: str) -> Dict[str, Any]:
             response_text = response_text[:-3]
         response_text = response_text.strip()
         
+        # Validate we have something that looks like JSON
+        if not response_text.startswith("{"):
+            raise ValueError(f"Response doesn't start with '{{': {response_text[:100]}")
+        
         return json.loads(response_text)
     except json.JSONDecodeError as e:
+        print(f"[ERROR] JSON decode failed: {e}")
+        print(f"[ERROR] Attempted to parse: {response_text[:500]}")
         raise ValueError(f"Failed to parse JSON from OpenAI: {e}")
+    except Exception as e:
+        print(f"[ERROR] Unexpected error in parsing: {e}")
+        raise
 
 def _call_openai_vision(payload_content: list) -> Dict[str, Any]:
     """Internal helper to call OpenAI API."""
     try:
+        print(f"[DEBUG] Calling OpenAI Vision API...")
         response = openai.chat.completions.create(
             model="gpt-4o",
             messages=[
@@ -84,16 +102,27 @@ def _call_openai_vision(payload_content: list) -> Dict[str, Any]:
             max_tokens=1000
         )
         
-        result_dict = _parse_json_response(response.choices[0].message.content)
+        # Extract response content
+        response_content = response.choices[0].message.content
+        print(f"[DEBUG] OpenAI response received, length: {len(response_content) if response_content else 0}")
+        
+        if not response_content:
+            raise ValueError("OpenAI returned empty content")
+        
+        result_dict = _parse_json_response(response_content)
         
         # Validate against the Pydantic model (this ensures structure compliance)
-        # We return the dict for now as downstream expects dicts, but validation is useful.
         validated_result = WasteAnalysis(**result_dict)
         return validated_result.model_dump()
         
+    except openai.APIError as e:
+        print(f"[ERROR] OpenAI API Error: {e}")
+        raise Exception(f"OpenAI API Error: {str(e)}")
     except Exception as e:
+        print(f"[ERROR] Analysis failed: {e}")
         # Re-raise with clear context
         raise Exception(f"Analysis failed: {str(e)}")
+
 
 def analyze_image_bytes(image_bytes: bytes) -> Dict[str, Any]:
     """

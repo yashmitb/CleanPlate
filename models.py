@@ -77,3 +77,30 @@ class AnalysisResponse(BaseModel):
     success: bool
     analysis: Optional[WasteAnalysis] = None
     error: Optional[str] = None
+
+# --- Recommendation Models ---
+
+class FoodRecommendation(BaseModel):
+    name: str
+    match_percentage: float = Field(ge=0, le=100)
+    image_url: str
+    category: str
+    description: str
+    confidence: str  # "high", "medium", "low"
+    tags: List[str] = []
+
+class DislikedFood(BaseModel):
+    name: str
+    frequency: int
+    last_seen: Optional[str] = None
+    category: str
+
+class RecommendationsResponse(BaseModel):
+    success: bool
+    recommendations: List[FoodRecommendation]
+    count: int
+
+class DislikesResponse(BaseModel):
+    success: bool
+    dislikes: List[DislikedFood]
+    count: int

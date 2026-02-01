@@ -112,6 +112,49 @@ def documentation():
             <div class="desc">Get meal analysis history. Optional param: <code>?limit=10</code></div>
         </div>
 
+        <div class="endpoint">
+            <span class="method get">GET</span> <span class="url">/api/user/&lt;user_id&gt;/recommendations</span>
+            <div class="desc">Get personalized food recommendations based on user preferences. Optional param: <code>?limit=10</code></div>
+            <div class="response-format">
+                <strong>Returns:</strong>
+                <pre>{
+  "success": true,
+  "recommendations": [
+    {
+      "name": "Chicken",
+      "match_percentage": 95.5,
+      "image_url": "https://...",
+      "category": "protein",
+      "description": "You've enjoyed chicken in 5 meals",
+      "confidence": "high",
+      "tags": ["protein", "favorite", "highly-recommended"]
+    }
+  ],
+  "count": 5
+}</pre>
+            </div>
+        </div>
+
+        <div class="endpoint">
+            <span class="method get">GET</span> <span class="url">/api/user/&lt;user_id&gt;/dislikes</span>
+            <div class="desc">Get list of foods the user dislikes based on waste patterns.</div>
+            <div class="response-format">
+                <strong>Returns:</strong>
+                <pre>{
+  "success": true,
+  "dislikes": [
+    {
+      "name": "Broccoli",
+      "frequency": 3,
+      "last_seen": "2026-01-15T10:30:00",
+      "category": "vegetable"
+    }
+  ],
+  "count": 2
+}</pre>
+            </div>
+        </div>
+
         <h2>System</h2>
 
         <div class="endpoint">
@@ -305,6 +348,68 @@ def get_meal_history(user_id):
             "success": True,
             "history": history,
             "count": len(history)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/api/user/<user_id>/recommendations', methods=['GET'])
+def get_recommendations(user_id):
+    """
+    Get food recommendations for a user based on their preferences.
+    
+    Query params:
+    - limit: Number of recommendations to return (default: 10)
+    
+    Returns:
+    {
+        "success": true,
+        "recommendations": [ ... ],
+        "count": 5
+    }
+    """
+    try:
+        import recommendation_service
+        
+        limit = request.args.get('limit', default=10, type=int)
+        recommendations = recommendation_service.get_recommendations(user_id, limit=limit)
+        
+        return jsonify({
+            "success": True,
+            "recommendations": recommendations,
+            "count": len(recommendations)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/api/user/<user_id>/dislikes', methods=['GET'])
+def get_dislikes(user_id):
+    """
+    Get disliked foods for a user.
+    
+    Returns:
+    {
+        "success": true,
+        "dislikes": [ ... ],
+        "count": 3
+    }
+    """
+    try:
+        import recommendation_service
+        
+        dislikes = recommendation_service.get_dislikes(user_id)
+        
+        return jsonify({
+            "success": True,
+            "dislikes": dislikes,
+            "count": len(dislikes)
         }), 200
         
     except Exception as e:
