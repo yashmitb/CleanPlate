@@ -84,6 +84,7 @@ def get_recommendations(user_id: str, limit: int = 10) -> List[Dict]:
         
         liked_foods = user.get('liked_foods', [])
         meal_count = user.get('meal_count', 0)
+        food_images = user.get('food_images', {})  # Get custom images from DB
         
         if not liked_foods:
             return []
@@ -105,11 +106,24 @@ def get_recommendations(user_id: str, limit: int = 10) -> List[Dict]:
         # Calculate match percentages based on frequency
         max_frequency = max(food_frequency.values()) if food_frequency else 1
         
+        # Use a deterministic random seed based on user_id for consistent but varied results
+        import zlib
+        seed = zlib.adler32(user_id.encode()) % (2**32)
+        import random
+        rng = random.Random(seed)
+        
         for food in liked_foods[:limit]:
             frequency = food_frequency.get(food, 1)
             
-            # Calculate match percentage (higher frequency = higher match)
-            match_percentage = min(100, (frequency / max_frequency) * 100)
+            # Calculate match percentage
+            # We want top items to be in the 90s but not exactly 100.
+            # Using a scale that pushes top items into the 91-99 range with variance
+            base_score = (frequency / max_frequency) * 10
+            # formula: 90 + base_score_contribution - random_jitter
+            match_percentage = 90 + base_score - rng.uniform(0.5, 4.5)
+            
+            # Clamp between 0 and 99.8 (avoiding perfect 100)
+            match_percentage = max(0, min(99.8, match_percentage))
             
             # Determine confidence based on meal count and frequency
             if meal_count >= 5 and frequency >= 3:
@@ -122,17 +136,22 @@ def get_recommendations(user_id: str, limit: int = 10) -> List[Dict]:
             # Get category
             category = categorize_food(food)
             
+            # Get image (check DB first, then dynamic)
+            image_url = food_images.get(food) or get_food_image_url(food)
+            
             # Generate tags
             tags = [category]
             if frequency >= 3:
                 tags.append("favorite")
-            if match_percentage >= 80:
+            if match_percentage >= 95:
+                tags.append("top-match")
+            elif match_percentage >= 80:
                 tags.append("highly-recommended")
             
             recommendations.append({
                 "name": food.title(),
                 "match_percentage": round(match_percentage, 1),
-                "image_url": get_food_image_url(food),
+                "image_url": image_url,
                 "category": category,
                 "description": f"You've enjoyed {food} in {frequency} meal{'s' if frequency != 1 else ''}",
                 "confidence": confidence,
